@@ -1,5 +1,8 @@
+import json
+
 from utils.file_io import createFiles, writeLineData, getBBPath, getBBCategoryDataFileName
 from utils.http_req_res import getData
+
 
 class BigBasketDataScraper:
     data_folder_name = "big-basket"
@@ -10,23 +13,34 @@ class BigBasketDataScraper:
     DATA_FIRST_PAGE_URL = "https://www.bigbasket.com/custompage/sysgenpd/?type=pc&slug="
     DATA_URL = "https://www.bigbasket.com/product/get-products/?slug="
 
-    def __init__(self, category_id, category_slug, category_name):
+    def __init__(self, category_id, category_slug, category_name, saveJSONData=False):
+        self.saveJSONData = saveJSONData
         self.category_id = category_id
         self.category_name = category_name.replace(",",";")
         self.category_slug = category_slug
 
-        createFiles(getBBPath(), getBBCategoryDataFileName(self.category_slug), self.PRODUCTS_FILE_HEADER)
+        print("*"*10)
+        print("Creating file for category : ")
+        print("*" * 10)
+
+        createFiles(getBBCategoryDataFileName(self.category_slug), self.PRODUCTS_FILE_HEADER)
 
     def scrape(self):
         print(f"Scraping data for category {self.category_slug} with ID {self.category_id}")
         self.scrapeFirstPage()
-        self.scrapeOtherPages()
+        self.scrapeOtherPages() # TODO : Uncomment after testing
 
     def scrapeFirstPage(self):
         print("*" * 10)
         print(f"Fetching data for category {self.category_slug}, page 1")
 
         data = getData(self.DATA_FIRST_PAGE_URL + self.category_slug)
+
+        if(self.saveJSONData):
+            # Saving page data to a JSON file
+            data_file_name = getBBCategoryDataFileName(self.category_slug, "json")
+            createFiles(data_file_name)
+            writeLineData(data_file_name, json.dumps(data))
 
         product_info = data["tab_info"][0]["product_info"]
 
@@ -51,6 +65,13 @@ class BigBasketDataScraper:
 
             data = getData(
                 f"{self.DATA_URL}{self.category_slug}&page={page_num}&tab_type=[%22all%22]&sorted_on=popularity&listtype=pc")
+
+            if (self.saveJSONData):
+                # Saving page data to a JSON file
+                data_file_name = getBBCategoryDataFileName(self.category_slug, "json", str(page_num))
+                createFiles(data_file_name)
+                writeLineData(data_file_name, json.dumps(data))
+
             products = data["tab_info"]["product_map"]["all"]["prods"]
 
             for j in range(len(products)):

@@ -1,12 +1,16 @@
+import json
+
 from utils.http_req_res import getData
 from utils.file_io import createFiles, writeLineData, getBBPath, getBBCategoriesFileName
+
 
 class BigBasketCategoriesScraper:
     CATEGORIES_URL = "https://www.bigbasket.com/auth/get_menu/?city_id=1"
     CATEGORIES_FILE_HEADER = "CATEGORY ID,CATEGORY NAME,CATEGORY SLUG\n"
 
     def __init__(self):
-        createFiles(getBBPath(), getBBCategoriesFileName(), self.CATEGORIES_FILE_HEADER)
+        createFiles(getBBCategoriesFileName(), self.CATEGORIES_FILE_HEADER)
+        createFiles(getBBCategoriesFileName("json"))
 
     def getCategories(self):
         categories = {}
@@ -16,6 +20,8 @@ class BigBasketCategoriesScraper:
         print("*" * 10)
 
         data = getData(self.CATEGORIES_URL)
+        writeLineData(getBBCategoriesFileName("json"), json.dumps(data))
+
         cats = data["topcats"]
 
         for cat in cats:
